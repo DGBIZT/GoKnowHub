@@ -1,0 +1,17 @@
+# Конфигурация базы данных
+DATABASE_HOST=
+DATABASE_USER=
+DATABASE_PASSWORD=
+DATABASE_NAME=
+DATABASE_PORT=
+
+# API-ключи
+API_KEY=your_api_key_here
+GITHUB_TOKEN=your_github_token_here
+
+SECRET_KEY=
+
+DEBUG=
+
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
