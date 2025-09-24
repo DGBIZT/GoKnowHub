@@ -1,14 +1,19 @@
 from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, generics
 
 from lms.models import Course, Lesson
 from lms.serializers import CourseSerializer, LessonSerializer
 from rest_framework.response import Response
+from django_filters import rest_framework as filters
+from .filters import CourseFilter
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     queryset = Course.objects.all()
+    filter_backends = [DjangoFilterBackend]  # Добавляем бэкенд фильтрации
+    filterset_class = CourseFilter  # Указываем наш фильтр
 
     def create(self, request, *args, **kwargs):
         # Проверяем, является ли данные списком
@@ -28,6 +33,8 @@ class LessonCreateAPIView(generics.CreateAPIView):
 class LessonListAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
+    filter_backends = [DjangoFilterBackend] # Добавляем бэкенд фильтрации
+    filterset_fields = ('title', 'course') # Указываем наш фильтр
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = LessonSerializer
@@ -39,3 +46,4 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
 
 class LessonDeleteAPIView(generics.DestroyAPIView):
     queryset = Lesson.objects.all()
+
