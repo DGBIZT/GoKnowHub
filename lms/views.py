@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, generics
-
 from lms.models import Course, Lesson
 from lms.serializers import CourseSerializer, LessonSerializer
 from rest_framework.response import Response
