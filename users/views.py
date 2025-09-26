@@ -6,6 +6,7 @@ from rest_framework.filters import OrderingFilter
 
 from users.models import Payments
 from users.serializers import PaymentSerializer
+from rest_framework import viewsets
 
 
 
@@ -30,3 +31,9 @@ class PaymentUpdateAPIView(generics.UpdateAPIView):
 
 class PaymentDeleteAPIView(generics.DestroyAPIView):
     queryset = Payments.objects.all()
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    queryset = Payments.objects.all()
+    serializer_class = PaymentSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['content_type', 'object_id']
