@@ -3,10 +3,12 @@ from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
 from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import AllowAny
 
 from users.models import Payments
-from users.serializers import PaymentSerializer
+from users.serializers import PaymentSerializer, UserSerializer
 from rest_framework import viewsets
+from users.models import CustomUser
 
 
 
@@ -37,3 +39,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['content_type', 'object_id']
+
+
+class UserCreateAPIView(generics.CreateAPIView):
+    serializer_class = UserSerializer
+    queryset = CustomUser.objects.all()
+    permission_classes = (AllowAny,)
