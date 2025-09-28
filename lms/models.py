@@ -1,4 +1,6 @@
 from django.db import models
+from users.models import CustomUser
+from django.conf import settings
 
 
 class Course(models.Model):
@@ -21,6 +23,12 @@ class Course(models.Model):
         help_text='Введите подробное описание курса',
         blank=True
     )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name="Пользователь",)
 
     class Meta:
         verbose_name = 'Курс'
@@ -73,6 +81,13 @@ class Lesson(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Курс'
     )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name="Пользователь", )
 
     class Meta:
         verbose_name = 'Урок'
