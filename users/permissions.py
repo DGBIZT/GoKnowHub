@@ -1,19 +1,23 @@
 from rest_framework.permissions import BasePermission
+from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 
 class IsModer(BasePermission):
-    """
-        Проверяет, является ли пользователь модератором.
-    """
     def has_permission(self, request, view):
-        # Разрешение только для пользователей из группы модераторов
         return request.user.groups.filter(name='moderators').exists()
 
-
 class IsOwner(BasePermission):
-    """
-        Проверяет, является ли пользователь владельцем
-    """
     def has_object_permission(self, request, view, obj):
-        if obj.owner == request.user:
+        if request.user.is_superuser:
             return True
-        return False
+        return obj.owner == request.user
+
+class IsModerOrOwner(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_superuser:
+            return True
+        if request.user.groups.filter(name='moderators').exists():
+            if request.method in ['GET', 'PUT', 'PATCH']:
+                return True
+            raise PermissionDenied("У модераторов нет прав на удаление и создание")
+        return obj.owner == request.user

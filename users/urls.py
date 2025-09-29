@@ -8,7 +8,11 @@ from users.views import (
     PaymentRetrieveAPIView,
     PaymentUpdateAPIView,
     PaymentDeleteAPIView,
-    PaymentViewSet
+    PaymentViewSet,
+    UserDestroyAPIView,
+    UserUpdateAPIView,
+    UserCreateAPIView,
+    UserRetrieveAPIView,
 )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -26,6 +30,7 @@ app_name = UsersConfig.name
 router = DefaultRouter()
 router.register(r'payments', PaymentViewSet)
 
+
 urlpatterns = [
     # Отдельные URL для конкретных APIView
     path('payment/create/', PaymentCreateAPIView.as_view(), name='payment-create'),
@@ -37,6 +42,11 @@ urlpatterns = [
     path("register/", UserCreateAPIView.as_view(), name="register"),
     path('login/', TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(permission_classes=(AllowAny,)), name='token_refresh'),
+
+    path('user/me/', UserRetrieveAPIView.as_view(), name='user-detail'),
+    path('user/<int:pk>/', UserRetrieveAPIView.as_view(), name='user-detail'),# Получение информации о себе
+    path('user/update/<int:pk>/', UserUpdateAPIView.as_view(), name='user-update'),  # Обновление информации
+    path('user/delete/<int:pk>/', UserDestroyAPIView.as_view(), name='user-delete'),  # Удаление аккаунта
 
     # Добавляем URL от роутера
     path('', include(router.urls)),
