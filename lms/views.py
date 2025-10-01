@@ -14,10 +14,16 @@ from users.permissions import IsModer, IsOwner, IsModerOrOwner
 
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
-    queryset = Course.objects.all()
+    # queryset = Course.objects.all()
     filter_backends = [DjangoFilterBackend]  # Добавляем бэкенд фильтрации
     filterset_class = CourseFilter  # Указываем наш фильтр
     permission_classes = [IsAuthenticated, IsModerOrOwner]
+
+    def get_queryset(self):
+        # Фильтрация по владельцу
+        if self.request.user.groups.filter(name='moderators').exists():
+            return Course.objects.all()
+        return Course.objects.filter(owner=self.request.user)
 
     def create(self, request, *args, **kwargs):
         # Проверяем, является ли данные списком
@@ -33,7 +39,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
 
-        course = serializer.save(owner=self.request.user)
+        return serializer.save(owner=self.request.user)
 
     def destroy(self, request, *args, **kwargs):
         if request.user.groups.filter(name='moderators').exists():
@@ -50,10 +56,16 @@ class LessonCreateAPIView(generics.CreateAPIView):
 
 class LessonListAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
-    queryset = Lesson.objects.all()
+    # queryset = Lesson.objects.all()
     filter_backends = [DjangoFilterBackend] # Добавляем бэкенд фильтрации
     filterset_fields = ('title', 'course') # Указываем наш фильтр
     permission_classes = [IsAuthenticated, IsModerOrOwner]
+
+    def get_queryset(self):
+        # Фильтрация по владельцу курса
+        if self.request.user.groups.filter(name='moderators').exists():
+            return Lesson.objects.all()
+        return Lesson.objects.filter(course__owner=self.request.user)
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
 
