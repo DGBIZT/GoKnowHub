@@ -3,12 +3,15 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, generics
 from rest_framework.permissions import IsAuthenticated
 
-from lms.models import Course, Lesson
+from lms.models import Course, Lesson, Subscription
 from lms.serializers import CourseSerializer, LessonSerializer
 from rest_framework.response import Response
 from django_filters import rest_framework as filters
 from .filters import CourseFilter
 from users.permissions import IsModer, IsOwner, IsModerOrOwner
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+
 
 
 
@@ -45,6 +48,11 @@ class CourseViewSet(viewsets.ModelViewSet):
         if request.user.groups.filter(name='moderators').exists():
             return Response(status=status.HTTP_403_FORBIDDEN, data={'detail': 'У модераторов нет прав на удаление'})
         return super().destroy(request, *args, **kwargs)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
 
 class LessonCreateAPIView(generics.CreateAPIView):
     serializer_class = LessonSerializer
@@ -87,3 +95,38 @@ class LessonDeleteAPIView(generics.DestroyAPIView):
             return Response(status=status.HTTP_403_FORBIDDEN, data={'detail': 'У модераторов нет прав на удаление'})
         return super().destroy(request, *args, **kwargs)
 
+class SubscriptionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        course_id = request.data.get('course_id')
+
+        if not course_id:
+            return Response({
+                "error": "course_id is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        course = get_object_or_404(Course, id=course_id)
+
+        # Проверяем существующую подписку
+        subscription = Subscription.objects.filter(
+            user=user,
+            course=course
+        ).first()
+
+        if subscription:
+            # Если подписка существует - удаляем
+            subscription.delete()
+            message = "Подписка удалена"
+        else:
+            # Если подписки нет - создаем
+            Subscription.objects.create(
+                user=user,
+                course=course
+            )
+            message = "Подписка добавлена"
+
+        return Response({
+            "message": message
+        }, status=status.HTTP_200_OK)

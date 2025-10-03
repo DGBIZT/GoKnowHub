@@ -1,6 +1,7 @@
 from django.db import models
 from users.models import CustomUser
 from django.conf import settings
+from django.utils import timezone
 
 
 class Course(models.Model):
@@ -101,3 +102,56 @@ class Lesson(models.Model):
         if self.preview:
             return self.preview.url
         return None
+
+class Subscription(models.Model):
+    """ Модель подписки на обновления курса для пользователя  """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subscriptions',
+        verbose_name='Пользователь'
+    )
+
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='subscribers',
+        verbose_name='Курс'
+    )
+
+    # Добавляем дату создания подписки
+    subscription_date = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Дата подписки'
+    )
+
+    # Добавляем статус активности подписки
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Активна'
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        unique_together = ('user', 'course')  # Уникальное сочетание пользователя и курса
+        ordering = ['-subscription_date']
+
+    def __str__(self):
+        return f"Подписка {self.user.email} на {self.course.title}"
+
+    def activate(self):
+        """Активировать подписку"""
+        self.is_active = True
+        self.save()
+
+    def deactivate(self):
+        """Деактивировать подписку"""
+        self.is_active = False
+        self.save()
+
+    # def clean(self):
+        # Валидация: проверка на подписку на собственный курс
+        # if self.course.owner == self.user:
+        #     raise ValidationError("Нельзя подписаться на собственный курс")
