@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from lms.models import Course, Lesson, Subscription
 from lms.serializers import CourseSerializer, LessonSerializer
@@ -12,7 +12,7 @@ from users.permissions import IsModer, IsOwner, IsModerOrOwner
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 
-
+from lms.paginators import CourseResultsSetPagination, LessonResultsSetPagination
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -21,12 +21,25 @@ class CourseViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]  # Добавляем бэкенд фильтрации
     filterset_class = CourseFilter  # Указываем наш фильтр
     permission_classes = [IsAuthenticated, IsModerOrOwner]
+    pagination_class = CourseResultsSetPagination
+
+    def get_permissions(self):
+        # Определяем разные разрешения для разных действий
+        if self.action in ['list', 'retrieve']:
+            # Для просмотра списка и получения одного курса не требуется аутентификация
+            self.permission_classes = [AllowAny]
+        else:
+            # Для остальных действий (create, update, destroy) требуется аутентификация
+            self.permission_classes = [IsAuthenticated, IsModerOrOwner]
+        return super().get_permissions()
 
     def get_queryset(self):
         # Фильтрация по владельцу
-        if self.request.user.groups.filter(name='moderators').exists():
-            return Course.objects.all()
-        return Course.objects.filter(owner=self.request.user)
+        if self.request.user.is_authenticated:
+            if self.request.user.groups.filter(name='moderators').exists():
+                return Course.objects.all()
+            return Course.objects.filter(owner=self.request.user)
+        return Course.objects.all()  # Для неавторизованных пользователей показываем все курсы
 
     def create(self, request, *args, **kwargs):
         # Проверяем, является ли данные списком
@@ -68,12 +81,35 @@ class LessonListAPIView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend] # Добавляем бэкенд фильтрации
     filterset_fields = ('title', 'course') # Указываем наш фильтр
     permission_classes = [IsAuthenticated, IsModerOrOwner]
+    pagination_class = LessonResultsSetPagination
+
+    def get_permissions(self):
+        # Проверяем текущий метод запроса
+        if self.request.method == 'GET':
+            # Для GET-запросов (получение списка) не требуется аутентификация
+            return [AllowAny()]
+        else:
+            # Для остальных методов требуется аутентификация
+            return [IsAuthenticated(), IsModerOrOwner()]
 
     def get_queryset(self):
         # Фильтрация по владельцу курса
-        if self.request.user.groups.filter(name='moderators').exists():
-            return Lesson.objects.all()
-        return Lesson.objects.filter(course__owner=self.request.user)
+        if self.request.user.is_authenticated:
+            if self.request.user.groups.filter(name='moderators').exists():
+                return Lesson.objects.all()
+            return Lesson.objects.filter(course__owner=self.request.user)
+        return Lesson.objects.all()  # Для неавторизованных пользователей показываем все уроки
+
+    def list(self, request, *args, **kwargs):
+        # Переопределяем метод list для дополнительной логики
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
 
