@@ -47,11 +47,14 @@ INSTALLED_APPS = [
     "users",
     "lms",
     'django_filters',
+    'corsheaders',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -142,11 +145,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = 'users.CustomUser'
 
-REST_FRAMEWORK = {
-    'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',
-    ),
-}
+# REST_FRAMEWORK = {
+#     'DEFAULT_FILTER_BACKENDS': (
+#         'django_filters.rest_framework.DjangoFilterBackend',
+#     ),
+# }
 
 # Настройки JWT-токенов
 REST_FRAMEWORK = {
@@ -158,7 +161,10 @@ REST_FRAMEWORK = {
     # ]
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
 }
 
 # Настройки срока действия токенов
@@ -166,3 +172,14 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:8000',  # Замените на адрес вашего фронтенд-сервера
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8000", #  Замените на адрес вашего фронтенд-сервера
+    # и добавьте адрес бэкенд-сервера
+]
+
+CORS_ALLOW_ALL_ORIGINS = False
