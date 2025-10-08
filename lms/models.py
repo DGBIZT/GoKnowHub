@@ -74,27 +74,41 @@ class Course(models.Model):
 
     def create_stripe_product(self):
         if not self.stripe_product:
-            product = Product.objects.create(
-                name=self.title,
-                description=self.description
-            )
-            self.stripe_product = product
-            self.save()
-            return product
+            try:
+                product = Product.objects.create(
+                    name=self.title,
+                    description=self.description
+                )
+                self.stripe_product = product
+                self.save()
+                return product
+            except Exception as e:
+                raise Exception(f"Ошибка создания продукта в Stripe: {str(e)}")
         return self.stripe_product
 
     def create_stripe_price(self):
         if not self.stripe_price:
-            price = Price.objects.create(
-                product=self.stripe_product,
-                unit_amount=int(self.price_amount * 100),  # в центах
-                currency='rub',
-                recurring={'interval': 'month'}
-            )
-            self.stripe_price = price
-            self.save()
-            return price
+            try:
+                price = Price.objects.create(
+                    product=self.stripe_product,
+                    unit_amount=int(self.price_amount * 100),  # в центах
+                    currency='rub',
+                    recurring={'interval': 'month'}
+                )
+                self.stripe_price = price
+                self.save()
+                return price
+            except Exception as e:
+                raise Exception(f"Ошибка создания цены в Stripe: {str(e)}")
         return self.stripe_price
+
+    def mark_as_purchased(self, user):
+        # Логика отметки курса как купленного
+        Subscription.objects.create(
+            user=user,
+            course=self,
+            is_active=True
+        )
 
 
 class Lesson(models.Model):

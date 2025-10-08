@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from datetime import timedelta
 
+
 load_dotenv()
 
 # Настройки для dj-stripe
@@ -58,6 +59,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'djstripe',
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
