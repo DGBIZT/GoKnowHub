@@ -2,6 +2,8 @@ from django.db import models
 from users.models import CustomUser
 from django.conf import settings
 from django.utils import timezone
+from djstripe.models import Product, Price
+from django.db.models import OneToOneField
 
 
 class Course(models.Model):
@@ -9,6 +11,29 @@ class Course(models.Model):
         max_length=255,
         verbose_name='Название',
         help_text='Введите название курса'
+    )
+    # Добавляем поля для интеграции со Stripe
+    stripe_product = OneToOneField(
+        Product,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='course'
+    )
+
+    stripe_price = OneToOneField(
+        Price,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='course'
+    )
+
+    price_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Стоимость курса',
+        default = 0.00 # Значение по умолчанию
     )
 
     preview = models.ImageField(
@@ -46,6 +71,30 @@ class Course(models.Model):
 
     def get_lessons_count(self):
         return self.lessons.count()
+
+    def create_stripe_product(self):
+        if not self.stripe_product:
+            product = Product.objects.create(
+                name=self.title,
+                description=self.description
+            )
+            self.stripe_product = product
+            self.save()
+            return product
+        return self.stripe_product
+
+    def create_stripe_price(self):
+        if not self.stripe_price:
+            price = Price.objects.create(
+                product=self.stripe_product,
+                unit_amount=int(self.price_amount * 100),  # в центах
+                currency='rub',
+                recurring={'interval': 'month'}
+            )
+            self.stripe_price = price
+            self.save()
+            return price
+        return self.stripe_price
 
 
 class Lesson(models.Model):

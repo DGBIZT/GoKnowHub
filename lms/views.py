@@ -14,6 +14,9 @@ from django.shortcuts import get_object_or_404
 
 from lms.paginators import CourseResultsSetPagination, LessonResultsSetPagination
 
+from django.urls import reverse
+from djstripe import models as djstripe_models
+
 
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
@@ -166,3 +169,33 @@ class SubscriptionView(APIView):
         return Response({
             "message": message
         }, status=status.HTTP_200_OK)
+
+
+class CreateCheckoutSessionView(APIView):
+    def post(self, request, course_id):
+        try:
+            course = Course.objects.get(id=course_id)
+
+            # Создаем продукт и цену, если их еще нет
+            course.create_stripe_product()
+            course.create_stripe_price()
+
+            session = djstripe_models.CheckoutSession.create(
+                customer=request.user.customer.id,  # если используете аутентификацию
+                payment_method_types=['card'],
+                line_items=[{
+                    'price': course.stripe_price.id,
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=request.build_absolute_uri(
+                    reverse('payment_success')) + '?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=request.build_absolute_uri(reverse('payment_cancel'))
+            )
+
+            return Response({'session_id': session.id}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+

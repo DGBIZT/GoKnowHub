@@ -16,6 +16,13 @@ from datetime import timedelta
 
 load_dotenv()
 
+# Настройки для dj-stripe
+DJSTRIPE_LIVE_MODE = False  # True для продакшена
+DJSTRIPE_PUBLISHABLE_KEY = os.getenv("Publishable_key")
+DJSTRIPE_SECRET_KEY = os.getenv("SecretKey")
+DJSTRIPE_API_KEY = DJSTRIPE_SECRET_KEY
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -49,6 +56,7 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'drf_yasg',
+    'djstripe',
 ]
 
 MIDDLEWARE = [
@@ -60,6 +68,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # 'djstripe.middleware.SubscriptionMiddleware',
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -183,3 +192,5 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = False
+
+DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
