@@ -1,6 +1,9 @@
 from django.db import models
 from users.models import CustomUser
 from django.conf import settings
+from django.utils import timezone
+from djstripe.models import Product, Price
+from django.db.models import OneToOneField
 
 
 class Course(models.Model):
@@ -8,6 +11,29 @@ class Course(models.Model):
         max_length=255,
         verbose_name='Название',
         help_text='Введите название курса'
+    )
+    # Добавляем поля для интеграции со Stripe
+    stripe_product = OneToOneField(
+        Product,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='course'
+    )
+
+    stripe_price = OneToOneField(
+        Price,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='course'
+    )
+
+    price_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Стоимость курса',
+        default = 0.00 # Значение по умолчанию
     )
 
     preview = models.ImageField(
@@ -45,6 +71,44 @@ class Course(models.Model):
 
     def get_lessons_count(self):
         return self.lessons.count()
+
+    def create_stripe_product(self):
+        if not self.stripe_product:
+            try:
+                product = Product.objects.create(
+                    name=self.title,
+                    description=self.description
+                )
+                self.stripe_product = product
+                self.save()
+                return product
+            except Exception as e:
+                raise Exception(f"Ошибка создания продукта в Stripe: {str(e)}")
+        return self.stripe_product
+
+    def create_stripe_price(self):
+        if not self.stripe_price:
+            try:
+                price = Price.objects.create(
+                    product=self.stripe_product,
+                    unit_amount=int(self.price_amount * 100),  # в центах
+                    currency='rub',
+                    recurring={'interval': 'month'}
+                )
+                self.stripe_price = price
+                self.save()
+                return price
+            except Exception as e:
+                raise Exception(f"Ошибка создания цены в Stripe: {str(e)}")
+        return self.stripe_price
+
+    def mark_as_purchased(self, user):
+        # Логика отметки курса как купленного
+        Subscription.objects.create(
+            user=user,
+            course=self,
+            is_active=True
+        )
 
 
 class Lesson(models.Model):
@@ -101,3 +165,56 @@ class Lesson(models.Model):
         if self.preview:
             return self.preview.url
         return None
+
+class Subscription(models.Model):
+    """ Модель подписки на обновления курса для пользователя  """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subscriptions',
+        verbose_name='Пользователь'
+    )
+
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='subscribers',
+        verbose_name='Курс'
+    )
+
+    # Добавляем дату создания подписки
+    subscription_date = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Дата подписки'
+    )
+
+    # Добавляем статус активности подписки
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Активна'
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        unique_together = ('user', 'course')  # Уникальное сочетание пользователя и курса
+        ordering = ['-subscription_date']
+
+    def __str__(self):
+        return f"Подписка {self.user.email} на {self.course.title}"
+
+    def activate(self):
+        """Активировать подписку"""
+        self.is_active = True
+        self.save()
+
+    def deactivate(self):
+        """Деактивировать подписку"""
+        self.is_active = False
+        self.save()
+
+    # def clean(self):
+        # Валидация: проверка на подписку на собственный курс
+        # if self.course.owner == self.user:
+        #     raise ValidationError("Нельзя подписаться на собственный курс")

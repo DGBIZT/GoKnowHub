@@ -5,6 +5,7 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
+    customer_id = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(unique=True, verbose_name='email address')
     phone_number = models.CharField(max_length=15, blank=True, null=True, verbose_name="Номер телефона")
     city = models.CharField(max_length=100, blank=True, verbose_name='Город')

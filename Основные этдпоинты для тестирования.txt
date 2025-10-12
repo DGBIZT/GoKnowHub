@@ -1,0 +1,24 @@
+Основные эндпоинты для тестирования:
+
+Курсы:
+
+GET    http://127.0.0.1:8000/courses/
+POST   http://127.0.0.1:8000/courses/
+GET    http://127.0.0.1:8000/courses/<id>/
+PUT    http://127.0.0.1:8000/courses/<id>/
+DELETE http://127.0.0.1:8000/courses/<id>/
+Уроки:
+
+POST   http://127.0.0.1:8000/lesson/create/
+GET    http://127.0.0.1:8000/lesson/
+GET    http://127.0.0.1:8000/lesson/<id>/
+PUT    http://127.0.0.1:8000/lesson/update/<id>/
+DELETE http://127.0.0.1:8000/lesson/delete/<id>/
+Платежи:
+
+POST   http://127.0.0.1:8000/courses/<course_id>/checkout/
+GET    http://127.0.0.1:8000/payment/success/
+GET    http://127.0.0.1:8000/payment/cancel/
+Подписки:
+
+POST   http://127.0.0.1:8000/subscription/
