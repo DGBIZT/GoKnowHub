@@ -17,6 +17,7 @@ from datetime import timedelta
 
 load_dotenv()
 
+
 # Настройки для dj-stripe
 DJSTRIPE_LIVE_MODE = False  # True для продакшена
 DJSTRIPE_PUBLISHABLE_KEY = os.getenv("Publishable_key")
