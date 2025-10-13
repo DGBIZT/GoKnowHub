@@ -1,6 +1,8 @@
+import stripe
 from django.shortcuts import render
 
 from django_filters.rest_framework import DjangoFilterBackend
+from requests import session
 from rest_framework import generics, status
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -13,6 +15,7 @@ from users.models import CustomUser
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from users.services import create_stripe_product, create_stripe_price, create_stripe_checkout_session
 
 
 class PaymentCreateAPIView(generics.CreateAPIView):
@@ -20,6 +23,16 @@ class PaymentCreateAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user) # Автоматически привязываем к текущему пользователю
+        course = serializer.validated_data['course']
+        try:
+            product_id = create_stripe_product(course.title, course.description)
+            price_id = create_stripe_price(product_id, int(course.price * 100))
+            success_url = f"http://127.0.0.1:8000/courses/{course.id}/"
+            session = create_stripe_checkout_session(price_id=price_id, success_url=success_url)
+        except stripe.StripeError as e:
+            print(e)
+
+        serializer.save(course=course, ammount=course.amount, payment_method=serializer.data['payment_method'], stripe_id=session.id, payment_url=session.url)
 
 class PaymentListAPIView(generics.ListAPIView):
     serializer_class = PaymentSerializer

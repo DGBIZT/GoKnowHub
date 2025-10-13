@@ -6,7 +6,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payments
-        fields = ["id", "payment_data", "amount", "payment_method", "object_id", "user", "content_type"]
+        fields = ["amount", "payment_method", "user", "course"]
         read_only_fields = ['user'] # Запрещаем изменение пользователя
 
 
