@@ -17,11 +17,10 @@ from datetime import timedelta
 
 load_dotenv()
 
-
 # Настройки для dj-stripe
 DJSTRIPE_LIVE_MODE = False  # True для продакшена
 DJSTRIPE_PUBLISHABLE_KEY = os.getenv("Publishable_key")
-DJSTRIPE_SECRET_KEY = os.getenv("SecretKey")
+DJSTRIPE_SECRET_KEY = os.getenv("DJSTRIPE_SECRET_KEY")
 DJSTRIPE_API_KEY = DJSTRIPE_SECRET_KEY
 
 
