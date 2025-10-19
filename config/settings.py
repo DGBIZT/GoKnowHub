@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_yasg',
     'djstripe',
+    'django_celery_beat',
 ]
 
 
@@ -196,3 +197,16 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = False
 
 DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+    }
+}
+
+CACHE_ENABLED = False
+
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
