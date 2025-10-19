@@ -1,5 +1,4 @@
 from django.db import models
-from users.models import CustomUser
 from django.conf import settings
 from django.utils import timezone
 from djstripe.models import Product, Price
@@ -11,22 +10,6 @@ class Course(models.Model):
         max_length=255,
         verbose_name='Название',
         help_text='Введите название курса'
-    )
-    # Добавляем поля для интеграции со Stripe
-    stripe_product = OneToOneField(
-        Product,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='course'
-    )
-
-    stripe_price = OneToOneField(
-        Price,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='course'
     )
 
     price_amount = models.DecimalField(
@@ -72,35 +55,6 @@ class Course(models.Model):
     def get_lessons_count(self):
         return self.lessons.count()
 
-    def create_stripe_product(self):
-        if not self.stripe_product:
-            try:
-                product = Product.objects.create(
-                    name=self.title,
-                    description=self.description
-                )
-                self.stripe_product = product
-                self.save()
-                return product
-            except Exception as e:
-                raise Exception(f"Ошибка создания продукта в Stripe: {str(e)}")
-        return self.stripe_product
-
-    def create_stripe_price(self):
-        if not self.stripe_price:
-            try:
-                price = Price.objects.create(
-                    product=self.stripe_product,
-                    unit_amount=int(self.price_amount * 100),  # в центах
-                    currency='rub',
-                    recurring={'interval': 'month'}
-                )
-                self.stripe_price = price
-                self.save()
-                return price
-            except Exception as e:
-                raise Exception(f"Ошибка создания цены в Stripe: {str(e)}")
-        return self.stripe_price
 
     def mark_as_purchased(self, user):
         # Логика отметки курса как купленного

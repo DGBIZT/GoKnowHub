@@ -9,9 +9,6 @@ from lms.views import (
     LessonUpdateAPIView,
     LessonDeleteAPIView,
     SubscriptionView,
-    CreateCheckoutSessionView,
-    PaymentSuccessView,
-    PaymentCancelView, CreateStripeCustomerView,
 )
 from django.urls import path
 
@@ -32,11 +29,5 @@ urlpatterns = [
         # Подписки
         path('subscription/', SubscriptionView.as_view(), name='subscription'),
 
-        # Платежи
-        path('courses/<int:course_id>/checkout/', CreateCheckoutSessionView.as_view(),
-                       name='create_checkout_session'),
-        path('payment/success/', PaymentSuccessView.as_view(), name='payment_success'),
-        path('payment/cancel/', PaymentCancelView.as_view(), name='payment_cancel'),
-        path('stripe/customer/', CreateStripeCustomerView.as_view(), name='create_stripe_customer'),
 
 ] + router.urls
