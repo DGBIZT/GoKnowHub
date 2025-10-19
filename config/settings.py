@@ -216,8 +216,26 @@ CELERY_ENABLE_UTC = os.getenv('CELERY_ENABLE_UTC', True)
 
 # Настройки для celery-beat
 CELERY_BEAT_SCHEDULE = {
-    'example-task': {
-        'task': 'your_app.tasks.example_task',
-        'schedule': 30,  # каждые 30 секунд
+    'send-all-courses-updates': {
+        'task': 'lms.tasks.send_all_courses_update',  # указываем правильную задачу
+        'schedule': 3600,  # каждые 1 час
     },
+    'send-single-course-update': {
+        'task': 'lms.tasks.send_course_update_email',
+        'schedule': 3600,  # каждые 1 час
+        'args': (1,)  # пример с конкретным курсом
+    }
 }
+
+
+
+
+# Настройки email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.yandex.ru'
+EMAIL_PORT = 465
+EMAIL_USE_TSL = False
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
