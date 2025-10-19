@@ -208,5 +208,16 @@ CACHES = {
 
 CACHE_ENABLED = False
 
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
+# Настройки Celery
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+CELERY_TIMEZONE = os.getenv('CELERY_TIMEZONE', 'Europe/Moscow')
+CELERY_ENABLE_UTC = os.getenv('CELERY_ENABLE_UTC', True)
+
+# Настройки для celery-beat
+CELERY_BEAT_SCHEDULE = {
+    'example-task': {
+        'task': 'your_app.tasks.example_task',
+        'schedule': 30,  # каждые 30 секунд
+    },
+}
