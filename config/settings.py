@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+
+from celery.schedules import crontab
 from dotenv import load_dotenv
 from pathlib import Path
 from datetime import timedelta
@@ -216,14 +218,22 @@ CELERY_ENABLE_UTC = os.getenv('CELERY_ENABLE_UTC', True)
 
 # Настройки для celery-beat
 CELERY_BEAT_SCHEDULE = {
+    'block-inactive-users': {
+        'task': 'users.tasks.block_inactive_users',
+        'schedule': crontab(hour=0, minute=0),  # каждый день в 00:00
+        'options': {
+                    'queue': 'high_priority',  # опционально
+                    'expires': 3600,  # истекает через час
+                }
+    },
     'send-all-courses-updates': {
-        'task': 'lms.tasks.send_all_courses_update',  # указываем правильную задачу
-        'schedule': 3600,  # каждые 1 час
+        'task': 'lms.tasks.send_all_courses_update',
+        'schedule': crontab(minute='*/60'),  # каждый час
     },
     'send-single-course-update': {
         'task': 'lms.tasks.send_course_update_email',
-        'schedule': 3600,  # каждые 1 час
-        'args': (1,)  # пример с конкретным курсом
+        'schedule': crontab(minute='*/60'),  # каждый час
+        'args': (1,)
     }
 }
 
