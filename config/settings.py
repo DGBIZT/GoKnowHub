@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+
+from celery.schedules import crontab
 from dotenv import load_dotenv
 from pathlib import Path
 from datetime import timedelta
@@ -58,6 +60,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_yasg',
     'djstripe',
+    'django_celery_beat',
 ]
 
 
@@ -196,3 +199,53 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = False
 
 DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+    }
+}
+
+CACHE_ENABLED = False
+
+# Настройки Celery
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+CELERY_TIMEZONE = os.getenv('CELERY_TIMEZONE', 'Europe/Moscow')
+CELERY_ENABLE_UTC = os.getenv('CELERY_ENABLE_UTC', True)
+
+# Настройки для celery-beat
+CELERY_BEAT_SCHEDULE = {
+    'block-inactive-users': {
+        'task': 'users.tasks.block_inactive_users',
+        'schedule': crontab(hour=0, minute=0),  # каждый день в 00:00
+        'options': {
+                    'queue': 'high_priority',  # опционально
+                    'expires': 3600,  # истекает через час
+                }
+    },
+    'send-all-courses-updates': {
+        'task': 'lms.tasks.send_all_courses_update',
+        'schedule': crontab(minute='*/60'),  # каждый час
+    },
+    'send-single-course-update': {
+        'task': 'lms.tasks.send_course_update_email',
+        'schedule': crontab(minute='*/60'),  # каждый час
+        'args': (1,)
+    }
+}
+
+
+
+
+# Настройки email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.yandex.ru'
+EMAIL_PORT = 465
+EMAIL_USE_TSL = False
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

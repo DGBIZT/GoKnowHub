@@ -133,7 +133,23 @@ class CourseViewSet(viewsets.ModelViewSet):
         }
     )
     def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
+        # Получаем текущий экземпляр курса
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        # Сохраняем изменения
+        self.perform_update(serializer)
+
+        # Отправляем задачу на отправку писем
+        send_course_update_email.delay(instance.id)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied, we need to refresh the cache
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         operation_description="Частичное обновление курса",
